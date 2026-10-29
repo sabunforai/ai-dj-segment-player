@@ -63,22 +63,80 @@
       .ver b { color: var(--teal); font-weight: 700; }
 
       /* ---------- layout ---------- */
-      .layout {
-        display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
-        gap: 0; align-items: start;
+      .player-section { padding: 18px 22px 24px; border-bottom: 1px solid var(--line-soft); }
+      .builder-section { padding: 18px 22px 26px; }
+      .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 12px; }
+      .section-title { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.02em; }
+      .section-sub { color: var(--faint); font-size: 13px; }
+      .player-grid {
+        display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.95fr);
+        gap: 22px; align-items: start;
       }
-      .stage-col { padding: 18px 22px 26px; min-width: 0; }
-      .side-col {
-        border-left: 1px solid var(--line-soft);
-        padding: 18px 20px 26px; min-width: 0;
-        position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
+      .builder-grid {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+        gap: 22px; align-items: start;
       }
+      .player-left, .player-right, .builder-left, .builder-right { min-width: 0; }
       @media (max-width: 900px) {
-        .layout { grid-template-columns: 1fr; }
-        .side-col { border-left: none; border-top: 1px solid var(--line-soft); position: static; max-height: none; }
-        .stage-col { padding: 14px 14px 20px; }
-        .side-col { padding: 14px 14px 22px; }
+        .player-grid, .builder-grid { grid-template-columns: 1fr; }
+        .player-section, .builder-section { padding: 14px 14px 20px; }
         .topbar { padding: 14px; }
+      }
+
+      /* ---------- player load bar ---------- */
+      .player-loadbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+      .player-loadbar .load-label {
+        font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
+        text-transform: uppercase; color: var(--teal);
+      }
+      .player-loadbar select {
+        background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+        border-radius: 6px; padding: 9px 10px; font-size: 14px; font-weight: 600; max-width: 100%;
+      }
+      .player-loadbar input {
+        background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+        border-radius: 6px; padding: 9px 10px; font-size: 14px; min-width: 0;
+      }
+      .player-loaded-line { margin: 2px 0 14px; font-size: 13.5px; color: var(--muted); }
+      .player-loaded-line b { color: var(--ink); }
+
+      /* ---------- play list tiles ---------- */
+      .play-list {
+        position: relative; display: flex; flex-direction: column; gap: 10px;
+        max-height: 660px; overflow-y: auto; padding: 2px 2px 6px;
+      }
+      .ptile {
+        background: var(--panel); border: 1px solid var(--line-soft); border-radius: 8px;
+        overflow: hidden; flex: none;
+      }
+      .ptile.playing { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); background: #20241d; }
+      .ptile.dragging { opacity: 0.45; }
+      .ptile.drag-over { outline: 2px dashed var(--accent); outline-offset: -4px; }
+      .tile-thumb { position: relative; aspect-ratio: 16 / 9; background: #000; overflow: hidden; }
+      .tile-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .tile-note {
+        position: absolute; inset: 0; display: grid; place-items: center;
+        font-size: 52px; color: var(--teal); background: var(--panel-2);
+      }
+      .tile-note.small { font-size: 15px; font-family: var(--mono); letter-spacing: 0.08em; color: var(--warn); padding: 10px; text-align: center; }
+      .tile-cap {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+        background: rgba(5, 6, 5, 0.85); color: var(--ink);
+        font-family: var(--mono); font-size: 12px; padding: 6px 9px; letter-spacing: 0.02em;
+      }
+      .tile-body { padding: 9px 10px 10px; }
+      .tile-title { font-weight: 700; font-size: 14.5px; line-height: 1.3; overflow-wrap: anywhere; }
+      .tile-meta { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 3px; }
+      .tile-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .tile-btn {
+        background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+        border-radius: 5px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; line-height: 1;
+      }
+      .tile-btn:hover:not(:disabled) { border-color: var(--faint); }
+      .tile-btn:disabled { opacity: 0.35; cursor: default; }
+      .builder-empty {
+        border: 1px dashed var(--line); border-radius: 8px; padding: 18px;
+        color: var(--faint); font-size: 14px; line-height: 1.55; background: var(--panel);
       }
 
       /* ---------- stage / decks ---------- */
@@ -178,7 +236,7 @@
 
       /* ---------- editor ---------- */
       .editor {
-        display: none; margin-top: 22px; border: 1px solid var(--line);
+        display: none; margin-top: 0; border: 1px solid var(--line);
         background: var(--panel); border-radius: 8px; padding: 16px;
       }
       .editor.open { display: block; }
@@ -354,13 +412,28 @@
         <h1>AI DJ Segment Player<span class="chip">LOCAL</span></h1>
         <p class="sub">Party build — no login, no server. Plays audio &amp; video files from this machine with no internet at all, plus YouTube cues whenever you're online. Pick per location.</p>
       </div>
-      <div class="ver"><b>v1.1.0</b> · Oct 22, 2026 · file:// ready</div>
+      <div class="ver"><b>v1.2.0</b> · Oct 29, 2026 · file:// ready</div>
     </header>
 
-    <main class="layout">
-      <!-- ===================== STAGE ===================== -->
-      <section class="stage-col">
-        <div id="stageWrap">
+    <main>
+      <!-- ===================== PLAYER ===================== -->
+      <section class="player-section">
+        <div class="section-head">
+          <h2 class="section-title">Player</h2>
+          <span class="section-sub">Load a saved playlist, press play, run the set</span>
+        </div>
+        <div class="player-loadbar">
+          <label class="load-label" for="playerPlSelect">Playlist for play</label>
+          <select id="playerPlSelect" aria-label="Choose a saved playlist to load into the player"></select>
+          <button class="mini-btn" id="btnLoadPlayer" type="button">Load / Reload</button>
+          <button class="mini-btn" id="btnPlayerSave" type="button">Save order</button>
+          <input id="playerSaveAsName" type="text" placeholder="Save As — new playlist name…" autocomplete="off" />
+          <button class="mini-btn" id="btnPlayerSaveAs" type="button">Save As</button>
+        </div>
+        <p class="player-loaded-line">Loaded for play: <b id="playerLoadedName">—</b> · Reorder the play list freely while it plays; Save writes the order back to this playlist, Save As keeps it as a new one.</p>
+        <div class="player-grid">
+          <div class="player-left">
+<div id="stageWrap">
           <div class="deck-stage" id="deckStage">
             <div class="audio-note" id="audioNote">Audio track — no video</div>
             <video id="deckA" playsinline preload="auto"></video>
@@ -369,7 +442,7 @@
             <div class="yt-slot" id="ytSlotB"></div>
             <span class="deck-tag a" id="tagA">DECK A</span>
             <span class="deck-tag b" id="tagB">DECK B</span>
-            <div class="stage-empty" id="stageEmpty">Add media files or YouTube links on the right, then press Play Set.<br />Local files play fully offline; YouTube cues stream when you're online.</div>
+            <div class="stage-empty" id="stageEmpty">Load a saved playlist into the player, then press Play Set.<br />Local files play fully offline; YouTube cues stream when you're online.</div>
           </div>
 
           <div class="now-playing">
@@ -396,6 +469,7 @@
             <button class="tbtn" id="btnReplay" type="button">Replay</button>
             <button class="tbtn" id="btnExtend" type="button">+30s Extend</button>
             <button class="tbtn" id="btnFull" type="button">Fullscreen</button>
+            <button class="tbtn" id="btnPlayerMute" type="button">Mute</button>
           </div>
 
           <div class="xfader">
@@ -411,8 +485,29 @@
             <span><kbd>F</kbd> fullscreen</span>
           </div>
         </div>
+          </div>
+          <div class="player-right">
+            <div class="queue-head" style="margin-top: 0">
+              <h2>Play list</h2>
+              <span class="count" id="playCount">0 cues</span>
+            </div>
+            <div id="playList" class="play-list"></div>
+            <p class="pl-note">Double-click a tile to play it right away (it crossfades in). Drag tiles to reorder, or use the arrow buttons on each tile. Playback always continues with whatever is next in this list.</p>
+          </div>
+        </div>
+      </section>
 
-        <!-- ===================== SEGMENT EDITOR ===================== -->
+      <!-- ===================== PLAYLIST BUILDER ===================== -->
+      <section class="builder-section">
+        <div class="section-head">
+          <h2 class="section-title">Playlist Builder</h2>
+          <span class="section-sub">Pick a playlist, add music, mark the segments</span>
+        </div>
+        <div class="builder-grid">
+          <div class="builder-left">
+            <p class="side-label">Edit view — mark a segment</p>
+            <div class="builder-empty" id="builderEditHint">Pick a cue on the right and tap “Mark segment” to set its in and out points here — preview, Set In / Set Out, or typed times. The preview above has its own mute, separate from the player's.</div>
+<!-- ===================== SEGMENT EDITOR ===================== -->
         <div class="editor" id="editor">
           <h2 id="edTitle">Edit segment</h2>
           <p class="file-line" id="edFile"></p>
@@ -439,15 +534,14 @@
             <button class="seg-btn" id="btnPreviewSeg" type="button">Preview segment</button>
             <button class="seg-btn" id="btnFullTrack" type="button">Use full track</button>
             <button class="seg-btn" id="btnPlayFromEdit" type="button">Play from here</button>
+            <button class="seg-btn" id="btnPreviewMute" type="button">Mute preview</button>
             <button class="seg-btn" id="btnCloseEditor" type="button">Done</button>
           </div>
           <p class="hint">Tap Set In / Set Out while the preview plays, or type times as m:ss. Leave Out blank to play to the end of the file. Changes save automatically on this device.</p>
         </div>
-      </section>
-
-      <!-- ===================== SIDE ===================== -->
-      <aside class="side-col">
-        <p class="side-label">Playlist</p>
+          </div>
+          <div class="builder-right">
+<p class="side-label">Playlist</p>
         <div class="pl-select-row">
           <select id="plSelect" aria-label="Choose playlist"></select>
         </div>
@@ -494,7 +588,7 @@
         </div>
 
         <div class="queue-head">
-          <h2>Cue Queue</h2>
+          <h2>Playlist cues</h2>
           <span class="count" id="cueCount">0 cues</span>
         </div>
         <div id="cueList"></div>
@@ -516,7 +610,9 @@
         </div>
 
         <p class="foot-note">Supported: MP3, M4A, AAC, WAV, OGG, FLAC, MP4, WebM, MOV and anything else this browser can play. YouTube cues stream through YouTube's own player and need an internet connection; local files never do. Tip: keep the media folder next to this file on the party laptop so re-linking after a reload takes one click.</p>
-      </aside>
+          </div>
+        </div>
+      </section>
     </main>
 
     <input type="file" id="filePicker" multiple accept="audio/*,video/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.flac,.opus,.mp4,.m4v,.webm,.mov,.mkv" hidden />
@@ -528,7 +624,7 @@
 
     <script>
       "use strict";
-      var VERSION = "1.1.0";
+      var VERSION = "1.2.0";
       var LS_KEY = "aidj-local-v1";
 
       /* ============================== state ============================== */
@@ -541,6 +637,15 @@
       // cue: {id, source:'local'|'youtube', title, fileName, size, kind:'audio'|'video', duration:sec|null, in:sec|null, out:sec|null}
       // youtube cues also carry: videoId, url, thumb
       var files = {};         // cueId -> { file: File, url: string }  (session only)
+      // The player works on its OWN copy of a saved playlist. Builder edits
+      // never touch this list; only Load / Reload, Save and Save As bridge them.
+      var playerCues = [];      // cues loaded into the player (copies, same ids as their source cues)
+      var playerSourceId = null;
+      var playerSourceName = "";
+      var playerMuted = false;  // play-screen mute (independent)
+      var previewMuted = false; // build-screen preview mute (independent)
+      var thumbCache = {};      // cueId -> data URL of a captured local-video frame
+      var thumbPending = {};
       var uidCounter = 1;
 
       function uid() { return "c" + Date.now().toString(36) + (uidCounter++).toString(36); }
@@ -556,6 +661,59 @@
         var list = cues();
         for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
         return null;
+      }
+
+      function playerList() { return playerCues; }
+      function findPlayerCue(id) {
+        for (var i = 0; i < playerCues.length; i++) if (playerCues[i].id === id) return playerCues[i];
+        return null;
+      }
+      function playlistById(id) {
+        for (var i = 0; i < state.playlists.length; i++) if (state.playlists[i].id === id) return state.playlists[i];
+        return null;
+      }
+      function segCaption(cue) {
+        var start = cue.in != null ? cue.in : 0;
+        var end = cue.out != null ? cue.out : (cue.duration != null ? cue.duration : null);
+        if (end != null) return "Segment: " + fmt(start) + "-" + fmt(end) + ", Len: " + fmt(Math.max(0, end - start));
+        return "Segment: " + fmt(start) + "-end, Len: full track";
+      }
+      // Capture a real frame from a local video file to use as its thumbnail.
+      function ensureLocalThumb(cue) {
+        if (!cue || cue.source !== "local" || cue.kind !== "video") return;
+        if (thumbCache[cue.id] || thumbPending[cue.id]) return;
+        var rec = files[cue.id];
+        if (!rec) return;
+        thumbPending[cue.id] = true;
+        var v = document.createElement("video");
+        v.muted = true;
+        v.playsInline = true;
+        v.preload = "auto";
+        v.src = rec.url;
+        var done = false;
+        function cleanup() { try { v.removeAttribute("src"); v.load(); } catch (e) {} }
+        v.addEventListener("loadeddata", function () {
+          var t = cue.in != null ? cue.in + 0.05 : 1;
+          if (v.duration && isFinite(v.duration)) t = Math.min(t, Math.max(0, v.duration - 0.05));
+          try { v.currentTime = t; } catch (e) {}
+        });
+        v.addEventListener("seeked", function () {
+          if (done) return;
+          done = true;
+          try {
+            var c = document.createElement("canvas");
+            c.width = 320; c.height = 180;
+            var ctx = c.getContext("2d");
+            ctx.drawImage(v, 0, 0, 320, 180);
+            thumbCache[cue.id] = c.toDataURL("image/jpeg", 0.72);
+          } catch (e) {}
+          thumbPending[cue.id] = false;
+          cleanup();
+          renderPlayerList();
+          renderCues();
+        });
+        v.addEventListener("error", function () { thumbPending[cue.id] = false; cleanup(); });
+        setTimeout(function () { if (!done) { thumbPending[cue.id] = false; cleanup(); } }, 6000);
       }
 
       /* ============================== persistence ============================== */
@@ -586,7 +744,9 @@
             playlists: state.playlists.map(function (p) {
               return { id: p.id, name: p.name, cues: p.cues.map(cleanCue) };
             }),
-            activeId: state.activeId, crossfade: state.crossfade, ytKey: state.ytKey || ""
+            activeId: state.activeId, crossfade: state.crossfade, ytKey: state.ytKey || "",
+            playerSourceId: playerSourceId, playerSourceName: playerSourceName,
+            playerCues: playerCues.map(cleanCue)
           }));
         } catch (e) { storageOK = false; }
       }
@@ -603,6 +763,11 @@
               state.activeId = data.activeId || (data.playlists[0] && data.playlists[0].id) || null;
               if (typeof data.crossfade === "number") state.crossfade = data.crossfade;
               if (typeof data.ytKey === "string") state.ytKey = data.ytKey;
+              if (Array.isArray(data.playerCues)) {
+                playerCues = data.playerCues.map(cleanCue);
+                playerSourceId = data.playerSourceId || null;
+                playerSourceName = data.playerSourceName || "";
+              }
             }
           }
         } catch (e) { /* fresh start */ }
@@ -779,8 +944,8 @@
         if (!window.YT || !YT.PlayerState) return;
         if (ev.data === YT.PlayerState.PLAYING) {
           deck.loaded = true;
-          var cue = findCue(deck.cueId);
-          if (cue && cue.errorText) { cue.errorText = null; cue.errorLabel = null; renderCues(); }
+          var cue = findPlayerCue(deck.cueId);
+          if (cue && cue.errorText) { cue.errorText = null; cue.errorLabel = null; renderPlayerList(); renderCues(); }
         }
         if (ev.data === YT.PlayerState.ENDED && i === liveDeck && isPlaying && !fading) advance(1);
       }
@@ -793,14 +958,14 @@
       };
       function onYTError(i, ev) {
         var deck = decks[i];
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         if (!cue) return;
         var code = ev && ev.data;
         var info = YT_ERROR_INFO[code] || ["YouTube playback error", "YouTube error " + (code || "?") + ": this video could not be played in the embedded player."];
         cue.errorLabel = info[0] + " · E" + (code || "?");
         cue.errorText = info[1];
         deck.loaded = false;
-        renderCues();
+        renderPlayerList(); renderCues();
         if (i === liveDeck && isPlaying) {
           notice(info[1] + " Skipping to the next playable cue.", true);
           var cueId = cue.id;
@@ -829,7 +994,7 @@
       function isPlayable(cue) { return cue.source === "youtube" ? true : !!files[cue.id]; }
       function deckEnd(i) {
         var deck = decks[i];
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         if (!cue) return 0;
         var end = (cue.out != null) ? cue.out : (dDur(i) || cue.duration || 0);
         if (i === liveDeck) end += extendBy;
@@ -837,14 +1002,14 @@
       }
       function deckStart(cue) { return cue && cue.in != null ? cue.in : 0; }
       function playableFrom(pos) {
-        var list = cues();
+        var list = playerCues;
         for (var i = Math.max(0, pos); i < list.length; i++) {
           if (isPlayable(list[i])) return i;
         }
         return -1;
       }
       function playableBefore(pos) {
-        var list = cues();
+        var list = playerCues;
         for (var i = Math.min(pos, list.length - 1); i >= 0; i--) {
           if (isPlayable(list[i])) return i;
         }
@@ -875,10 +1040,10 @@
         var deck = decks[i];
         deck.wantPlay = true;
         if (deck.mode === "yt") {
-          if (deck.yt && deck.ytReady) { try { deck.yt.unMute(); deck.yt.playVideo(); } catch (e) {} }
+          if (deck.yt && deck.ytReady) { try { (playerMuted ? deck.yt.mute() : deck.yt.unMute()); deck.yt.playVideo(); } catch (e) {} }
           return;
         }
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         var p = deck.el.play();
         if (p && p.catch) p.catch(function (err) {
           if (cue && i === liveDeck && isPlaying) {
@@ -907,7 +1072,7 @@
       function dOpacity(i, v) {
         var deck = decks[i];
         if (deck.mode === "yt") { ytSlotEls[i].style.opacity = String(v); return; }
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         deck.el.style.opacity = cue && cue.kind === "video" ? String(v) : "0";
       }
       function syncDeckVisibility(i) {
@@ -930,7 +1095,7 @@
             if (!ok) {
               cue.errorLabel = "YouTube unreachable";
               cue.errorText = "The YouTube player could not load — YouTube cues need an internet connection. Local files keep working offline.";
-              renderCues();
+              renderPlayerList(); renderCues();
               notice(cue.errorText, true);
               if (deckIdx === liveDeck && isPlaying) advance(1);
               return;
@@ -942,7 +1107,7 @@
               else deck.yt.loadVideoById({ videoId: cue.videoId, startSeconds: startSec });
               deck.yt.setVolume(Math.round(volume * 100));
               deck.loaded = true;
-              if (deck.wantPlay) { deck.yt.unMute(); deck.yt.playVideo(); }
+              if (deck.wantPlay) { (playerMuted ? deck.yt.mute() : deck.yt.unMute()); deck.yt.playVideo(); }
             } catch (e) {}
           });
           return;
@@ -951,6 +1116,7 @@
         syncDeckVisibility(deckIdx);
         var rec = files[cue.id];
         deck.el.src = rec.url;
+        deck.el.muted = playerMuted;
         deck.el.volume = volume;
         deck.el.style.opacity = cue.kind === "video" ? String(volume) : "0";
         var startAt = deckStart(cue);
@@ -988,7 +1154,7 @@
           return false;
         }
         if (fading) { finishFade(true); }
-        var cue = cues()[pos];
+        var cue = playerCues[pos];
         var target = opts.deck != null ? opts.deck : (queuePos < 0 ? liveDeck : 1 - liveDeck);
         // Pause & clear the other deck if we're switching decks
         if (target !== liveDeck || queuePos < 0) {
@@ -1003,6 +1169,8 @@
         dPlay(liveDeck);
         updateNowPlaying();
         renderCues();
+        renderPlayerList();
+        scrollPlayerToCurrent();
         startTicker();
         return true;
       }
@@ -1018,7 +1186,7 @@
 
       function beginFade(nextPos, remaining) {
         var xf = state.crossfade;
-        var cue = cues()[nextPos];
+        var cue = playerCues[nextPos];
         var from = liveDeck, to = 1 - liveDeck;
         clearDeck(to);
         loadDeck(to, cue, 0);
@@ -1038,6 +1206,8 @@
         extendBy = 0;
         updateNowPlaying();
         renderCues();
+        renderPlayerList();
+        scrollPlayerToCurrent();
       }
 
       function tickFade(now) {
@@ -1053,14 +1223,14 @@
       function ticker() {
         tickFade(performance.now());
         var deck = decks[liveDeck];
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         if (cue && deck.loaded) {
           var t = dTime(liveDeck);
           var start = deckStart(cue);
           var end = deckEnd(liveDeck);
           if (cue.source === "youtube" && cue.duration == null) {
             var rd = dDur(liveDeck);
-            if (rd > 0) { cue.duration = rd; save(); renderCues(); }
+            if (rd > 0) { cue.duration = rd; save(); renderPlayerList(); renderCues(); }
           }
           var segLen = Math.max(0.01, end - start);
           var pct = Math.max(0, Math.min(100, ((t - start) / segLen) * 100));
@@ -1122,7 +1292,7 @@
 
       function replaySegment() {
         var deck = decks[liveDeck];
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         if (!cue) return;
         if (fading) finishFade(true);
         extendBy = 0;
@@ -1136,7 +1306,7 @@
 
       function extendSegment() {
         var deck = decks[liveDeck];
-        var cue = findCue(deck.cueId);
+        var cue = findPlayerCue(deck.cueId);
         if (!cue || queuePos < 0) return;
         var dur = dDur(liveDeck) || cue.duration || 0;
         var curEnd = deckEnd(liveDeck);
@@ -1160,19 +1330,20 @@
           tagEls[i].classList.toggle("live", !!live);
           tagEls[i].textContent = "DECK " + (i === 0 ? "A" : "B") + (live ? " · LIVE" : "");
         }
-        var cue = findCue(decks[liveDeck].cueId);
+        var cue = findPlayerCue(decks[liveDeck].cueId);
         var stage = $("deckStage");
         stage.classList.toggle("audio-only", !!(cue && cue.kind === "audio"));
       }
       function updateNowPlaying() {
-        var pl = activePlaylist();
-        $("npPlaylist").textContent = pl ? pl.name : "No playlist";
-        var cue = findCue(decks[liveDeck].cueId);
+        $("npPlaylist").textContent = playerSourceName ? playerSourceName : "No playlist loaded";
+        var loadedNameEl = $("playerLoadedName");
+        if (loadedNameEl) loadedNameEl.textContent = playerSourceName || "—";
+        var cue = findPlayerCue(decks[liveDeck].cueId);
         if (!cue) {
           $("npTitle").textContent = "Nothing loaded";
           $("npSeg").innerHTML = "&nbsp;";
           $("npNext").textContent = "";
-          $("stageEmpty").classList.toggle("hidden", cues().length > 0);
+          $("stageEmpty").classList.toggle("hidden", playerCues.length > 0);
           setStatus("Deck ready", "idle");
           $("btnPlay").textContent = "Play Set";
           updateDeckTags();
@@ -1183,9 +1354,9 @@
         var end = deckEnd(liveDeck);
         var segText = fmt(deckStart(cue)) + " → " + (cue.out == null && !extendBy ? "end of file" : fmt(end));
         var len = Math.max(0, end - deckStart(cue));
-        $("npSeg").textContent = "Cue " + (queuePos + 1) + " of " + cues().length + " · segment " + segText + " · " + fmt(len) + (extendBy ? " · extended +" + Math.round(extendBy) + "s" : "");
+        $("npSeg").textContent = "Cue " + (queuePos + 1) + " of " + playerCues.length + " · segment " + segText + " · " + fmt(len) + (extendBy ? " · extended +" + Math.round(extendBy) + "s" : "");
         var nextPos = playableFrom(queuePos + 1);
-        var nextCue = nextPos >= 0 ? cues()[nextPos] : null;
+        var nextCue = nextPos >= 0 ? playerCues[nextPos] : null;
         $("npNext").innerHTML = nextCue ? "Up next: <b></b>" : "Last cue in this set.";
         if (nextCue) $("npNext").querySelector("b").textContent = nextCue.title;
         if (isPlaying) { setStatus(fading ? "Crossfading" : "Playing"); $("btnPlay").textContent = "Pause"; }
@@ -1218,7 +1389,7 @@
         list.forEach(function (cue, idx) {
           if (cue.source !== "youtube" && !files[cue.id]) missing++;
           var row = document.createElement("div");
-          row.className = "cue" + (idx === queuePos && decks[liveDeck].cueId === cue.id ? " playing" : "") + (cue.id === editingId ? " selected" : "");
+          row.className = "cue" + (cue.id === editingId ? " selected" : "");
 
           var num = document.createElement("div");
           num.className = "num";
@@ -1233,6 +1404,13 @@
             thumb.loading = "lazy";
             thumb.addEventListener("error", function () { thumb.style.display = "none"; });
             row.appendChild(thumb);
+          } else if (cue.source === "local" && cue.kind === "video") {
+            var lthumb = document.createElement("img");
+            lthumb.className = "thumb";
+            lthumb.alt = "";
+            if (thumbCache[cue.id]) lthumb.src = thumbCache[cue.id];
+            else { lthumb.style.visibility = "hidden"; ensureLocalThumb(cue); }
+            row.appendChild(lthumb);
           }
 
           var body = document.createElement("div");
@@ -1283,7 +1461,7 @@
           playBtn.textContent = "▶";
           playBtn.title = "Play from here";
           playBtn.disabled = !isPlayable(cue);
-          playBtn.addEventListener("click", function () { startAt(idx); });
+          playBtn.addEventListener("click", function () { playBuilderCue(idx); });
           var upBtn = document.createElement("button");
           upBtn.type = "button"; upBtn.className = "icon-btn"; upBtn.textContent = "↑"; upBtn.title = "Move up";
           upBtn.disabled = idx === 0;
@@ -1333,7 +1511,6 @@
         var j = idx + dir;
         if (j < 0 || j >= list.length) return;
         var tmp = list[idx]; list[idx] = list[j]; list[j] = tmp;
-        if (queuePos === idx) queuePos = j; else if (queuePos === j) queuePos = idx;
         save();
         renderCues();
       }
@@ -1341,10 +1518,10 @@
         var list = cues();
         var cue = list[idx];
         if (!cue) return;
-        if (decks[liveDeck].cueId === cue.id) { stopSet("Deck ready"); queuePos = -1; clearDeck(liveDeck); clearDeck(1 - liveDeck); }
-        else if (idx < queuePos) queuePos--;
         var rec = files[cue.id];
-        if (rec) { delete files[cue.id]; if (!urlInUse(rec.url)) URL.revokeObjectURL(rec.url); }
+        var playerUses = false;
+        for (var pi = 0; pi < playerCues.length; pi++) if (playerCues[pi].id === cue.id) playerUses = true;
+        if (rec && !playerUses) { delete files[cue.id]; if (!urlInUse(rec.url)) URL.revokeObjectURL(rec.url); }
         if (editingId === cue.id) closeEditor();
         list.splice(idx, 1);
         save();
@@ -1451,6 +1628,7 @@
           if (edYT.videoId !== videoId) {
             edYT.videoId = videoId;
             try { edYT.player.cueVideoById(videoId); } catch (e) {}
+            applyPreviewMute();
           }
           cb(true);
           return;
@@ -1468,7 +1646,7 @@
           edYT.videoId = videoId;
           try {
             edYT.player = new YT.Player(iframe, { events: {
-              onReady: function () { edYT.ready = true; cb(true); },
+              onReady: function () { edYT.ready = true; applyPreviewMute(); cb(true); },
               onError: function () { cb(false); }
             }});
           } catch (e) { cb(false); }
@@ -1507,6 +1685,7 @@
         editingId = cueId;
         previewStopAt = null;
         $("editor").classList.add("open");
+        var editHintEl2 = $("builderEditHint"); if (editHintEl2) editHintEl2.style.display = "none";
         fillEditor(cue);
         if (cue.source === "youtube") {
           previewMode = "yt";
@@ -1549,6 +1728,7 @@
         previewEl.pause();
         if (edYT.player && edYT.ready) { try { edYT.player.pauseVideo(); } catch (e) {} }
         $("editor").classList.remove("open");
+        var editHintEl = $("builderEditHint"); if (editHintEl) editHintEl.style.display = "";
         renderCues();
       }
       function readEditorTimes(showError) {
@@ -1591,6 +1771,262 @@
         }
       });
 
+      /* ============================== player list ============================== */
+      // The play list is a copy: reordering or jumping here never edits the
+      // saved playlist until the user presses Save or Save As in the player.
+      var playerDragIdx = -1;
+
+      function loadIntoPlayer(plId, silent) {
+        var p = playlistById(plId);
+        if (!p) { if (!silent) notice("Pick a saved playlist to load into the player first."); return; }
+        if (fading) finishFade(true);
+        stopSet("Deck ready");
+        clearDeck(0);
+        clearDeck(1);
+        queuePos = -1;
+        extendBy = 0;
+        isPlaying = false;
+        playerCues = p.cues.map(function (c) { return cleanCue(c); });
+        playerSourceId = p.id;
+        playerSourceName = p.name;
+        save();
+        renderPlaylists();
+        renderPlayerList();
+        updateNowPlaying();
+        if (!silent) toast("Loaded “" + p.name + "” into the player. Builder edits won't change it — reload to pick them up.");
+      }
+
+      function scrollPlayerToCurrent() {
+        var wrap = $("playList");
+        if (!wrap || queuePos < 0) return;
+        var doScroll = function () {
+          var tile = wrap.children[queuePos];
+          if (!tile) return;
+          wrap.scrollTop = Math.max(0, tile.offsetTop - 8);
+        };
+        doScroll();
+        if (window.requestAnimationFrame) requestAnimationFrame(doScroll);
+      }
+
+      function renderPlayerList() {
+        var wrap = $("playList");
+        if (!wrap) return;
+        wrap.innerHTML = "";
+        var count = $("playCount");
+        if (count) count.textContent = playerCues.length + (playerCues.length === 1 ? " cue" : " cues");
+        if (!playerCues.length) {
+          var empty = document.createElement("div");
+          empty.className = "cue-empty";
+          empty.textContent = "Nothing loaded in the player yet. Pick a saved playlist above and tap Load / Reload — the player plays its own copy, so builder edits never disturb a set in progress.";
+          wrap.appendChild(empty);
+          return;
+        }
+        playerCues.forEach(function (cue, idx) {
+          var tile = document.createElement("div");
+          tile.className = "ptile" + (idx === queuePos && decks[liveDeck].cueId === cue.id ? " playing" : "");
+          tile.draggable = true;
+
+          var tw = document.createElement("div");
+          tw.className = "tile-thumb";
+          var srcLabel;
+          if (cue.source === "youtube") {
+            srcLabel = "YouTube";
+            var img = document.createElement("img");
+            img.src = cue.thumb || ("https://i.ytimg.com/vi/" + cue.videoId + "/hqdefault.jpg");
+            img.alt = "";
+            img.loading = "lazy";
+            img.addEventListener("error", function () { img.style.display = "none"; });
+            tw.appendChild(img);
+          } else if (cue.kind === "video" && files[cue.id]) {
+            srcLabel = "Local video";
+            if (thumbCache[cue.id]) {
+              var vimg = document.createElement("img");
+              vimg.src = thumbCache[cue.id];
+              vimg.alt = "";
+              tw.appendChild(vimg);
+            } else {
+              var ph = document.createElement("div");
+              ph.className = "tile-note small";
+              ph.textContent = "Grabbing a frame…";
+              tw.appendChild(ph);
+              ensureLocalThumb(cue);
+            }
+          } else if (cue.kind === "video") {
+            srcLabel = "Local video · needs re-link";
+            var nv = document.createElement("div");
+            nv.className = "tile-note small";
+            nv.textContent = "Needs re-link";
+            tw.appendChild(nv);
+          } else {
+            srcLabel = files[cue.id] ? "Local audio" : "Local audio · needs re-link";
+            var note = document.createElement("div");
+            note.className = "tile-note";
+            note.textContent = "♪";
+            tw.appendChild(note);
+          }
+          var cap = document.createElement("div");
+          cap.className = "tile-cap";
+          cap.textContent = segCaption(cue);
+          tw.appendChild(cap);
+          tile.appendChild(tw);
+
+          var body = document.createElement("div");
+          body.className = "tile-body";
+          var tt = document.createElement("div");
+          tt.className = "tile-title";
+          tt.textContent = (idx + 1) + ". " + cue.title;
+          body.appendChild(tt);
+          var meta = document.createElement("div");
+          meta.className = "tile-meta";
+          meta.textContent = srcLabel + (cue.duration != null ? " · track " + fmt(cue.duration) : "") + (cue.errorLabel ? " · " + cue.errorLabel : "");
+          body.appendChild(meta);
+          if (cue.errorText) {
+            var err = document.createElement("div");
+            err.className = "cue-err";
+            err.textContent = cue.errorText;
+            body.appendChild(err);
+          }
+          var btns = document.createElement("div");
+          btns.className = "tile-btns";
+          function mkBtn(label, title, fn, dis) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "tile-btn";
+            b.textContent = label;
+            b.title = title;
+            b.disabled = !!dis;
+            b.addEventListener("click", function (ev) { ev.stopPropagation(); fn(); });
+            b.addEventListener("dblclick", function (ev) { ev.stopPropagation(); });
+            btns.appendChild(b);
+          }
+          mkBtn("↑", "Move up one", function () { movePlayerCue(idx, -1); }, idx === 0);
+          mkBtn("↓", "Move down one", function () { movePlayerCue(idx, 1); }, idx === playerCues.length - 1);
+          mkBtn("⇈ Top", "Move to top", function () { movePlayerToEdge(idx, true); }, idx === 0);
+          mkBtn("⇊ Bottom", "Move to bottom", function () { movePlayerToEdge(idx, false); }, idx === playerCues.length - 1);
+          body.appendChild(btns);
+          tile.appendChild(body);
+
+          tile.addEventListener("dblclick", function () { jumpToPlayer(idx); });
+          tile.addEventListener("dragstart", function (ev) {
+            playerDragIdx = idx;
+            tile.classList.add("dragging");
+            try { ev.dataTransfer.effectAllowed = "move"; ev.dataTransfer.setData("text/plain", String(idx)); } catch (e) {}
+          });
+          tile.addEventListener("dragend", function () { tile.classList.remove("dragging"); });
+          tile.addEventListener("dragover", function (ev) { ev.preventDefault(); tile.classList.add("drag-over"); });
+          tile.addEventListener("dragleave", function () { tile.classList.remove("drag-over"); });
+          tile.addEventListener("drop", function (ev) {
+            ev.preventDefault();
+            tile.classList.remove("drag-over");
+            var from = playerDragIdx;
+            if (from < 0) { try { from = parseInt(ev.dataTransfer.getData("text/plain"), 10); } catch (e) {} }
+            if (isFinite(from)) reorderPlayer(from, idx);
+            playerDragIdx = -1;
+          });
+          wrap.appendChild(tile);
+        });
+      }
+
+      function reorderPlayer(from, to) {
+        if (from === to || from < 0 || to < 0 || from >= playerCues.length || to >= playerCues.length) return;
+        var liveId = queuePos >= 0 && playerCues[queuePos] ? playerCues[queuePos].id : null;
+        var item = playerCues.splice(from, 1)[0];
+        playerCues.splice(to, 0, item);
+        if (liveId) {
+          for (var i = 0; i < playerCues.length; i++) if (playerCues[i].id === liveId) { queuePos = i; break; }
+        }
+        save();
+        renderPlayerList();
+        updateNowPlaying();
+      }
+      function movePlayerCue(idx, dir) { reorderPlayer(idx, idx + dir); }
+      function movePlayerToEdge(idx, toTop) { reorderPlayer(idx, toTop ? 0 : playerCues.length - 1); }
+
+      function beginFadeTo(nextPos) {
+        var cue = playerCues[nextPos];
+        var from = liveDeck, to = 1 - liveDeck;
+        clearDeck(to);
+        loadDeck(to, cue, 0);
+        dPlay(to);
+        fading = { from: from, to: to, startAt: performance.now(), dur: Math.max(60, state.crossfade * 1000), nextPos: nextPos };
+        setStatus("Crossfading");
+      }
+      function jumpToPlayer(idx) {
+        var cue = playerCues[idx];
+        if (!cue) return;
+        if (!isPlayable(cue)) {
+          notice("That cue's file isn't linked in this session — re-link it in the builder below, then reload the playlist into the player.", true);
+          return;
+        }
+        if (idx === queuePos && decks[liveDeck].cueId === cue.id) return;
+        if (isPlaying && queuePos >= 0 && state.crossfade > 0) {
+          if (fading) finishFade(true);
+          beginFadeTo(idx);
+        } else {
+          startAt(idx);
+        }
+      }
+      // A play tap in the builder loads that playlist into the player and starts there.
+      function playBuilderCue(idx) {
+        if (!activePlaylist()) return;
+        loadIntoPlayer(state.activeId, true);
+        startAt(idx);
+      }
+
+      function savePlayerOrder() {
+        var p = playlistById(playerSourceId);
+        if (!p) { notice("The playlist this set was loaded from no longer exists — use Save As to keep this order as a new playlist.", true); return; }
+        var used = {};
+        var next = [];
+        playerCues.forEach(function (pc) {
+          var bc = null;
+          for (var i = 0; i < p.cues.length; i++) if (p.cues[i].id === pc.id) bc = p.cues[i];
+          if (bc) { next.push(bc); used[bc.id] = true; }
+          else next.push(cleanCue(pc));
+        });
+        p.cues.forEach(function (bc) { if (!used[bc.id]) next.push(bc); });
+        p.cues = next;
+        save();
+        renderPlaylists();
+        renderCues();
+        toast("Saved the play list order back to “" + p.name + "”.");
+      }
+      function savePlayerAs() {
+        var name = $("playerSaveAsName").value.trim();
+        if (!name) { notice("Type a name for the new playlist in the Save As box first."); return; }
+        if (!playerCues.length) { notice("The play list is empty — load a playlist into the player first."); return; }
+        var p = { id: uid(), name: name, cues: playerCues.map(function (pc) { return cleanCue(pc); }) };
+        state.playlists.push(p);
+        playerSourceId = p.id;
+        playerSourceName = p.name;
+        $("playerSaveAsName").value = "";
+        save();
+        renderPlaylists();
+        updateNowPlaying();
+        toast("Saved the current play order as “" + name + "”. The player is now loaded from it.");
+      }
+
+      /* ---- independent mutes: player vs builder preview ---- */
+      function applyPlayerMute() {
+        for (var i = 0; i < 2; i++) {
+          var deck = decks[i];
+          deck.el.muted = playerMuted;
+          if (deck.mode === "yt" && deck.yt && deck.ytReady) {
+            try { if (playerMuted) deck.yt.mute(); else deck.yt.unMute(); } catch (e) {}
+          }
+        }
+        var b = $("btnPlayerMute");
+        if (b) b.textContent = playerMuted ? "Unmute" : "Mute";
+      }
+      function applyPreviewMute() {
+        previewEl.muted = previewMuted;
+        if (edYT.player && edYT.ready) {
+          try { if (previewMuted) edYT.player.mute(); else edYT.player.unMute(); } catch (e) {}
+        }
+        var b = $("btnPreviewMute");
+        if (b) b.textContent = previewMuted ? "Unmute preview" : "Mute preview";
+      }
+
       /* ============================== playlists ============================== */
       function renderPlaylists() {
         var sel = $("plSelect");
@@ -1602,11 +2038,19 @@
           if (p.id === state.activeId) opt.selected = true;
           sel.appendChild(opt);
         });
+        var psel = $("playerPlSelect");
+        if (psel) {
+          psel.innerHTML = "";
+          state.playlists.forEach(function (p) {
+            var opt = document.createElement("option");
+            opt.value = p.id;
+            opt.textContent = p.name + " (" + p.cues.length + ")";
+            if (p.id === playerSourceId) opt.selected = true;
+            psel.appendChild(opt);
+          });
+        }
       }
       function switchPlaylist(id) {
-        stopSet("Deck ready");
-        queuePos = -1;
-        clearDeck(0); clearDeck(1);
         closeEditorSilent();
         state.activeId = id;
         save();
@@ -1619,6 +2063,7 @@
         previewEl.pause();
         if (edYT.player && edYT.ready) { try { edYT.player.pauseVideo(); } catch (e) {} }
         $("editor").classList.remove("open");
+        var editHintEl = $("builderEditHint"); if (editHintEl) editHintEl.style.display = "";
       }
 
       /* ============================== export / import ============================== */
@@ -1956,8 +2401,17 @@
         $("xfRange").value = String(state.crossfade);
         $("xfVal").textContent = (state.crossfade % 1 ? state.crossfade.toFixed(1) : state.crossfade) + "s";
 
+        if (!playerCues.length && activePlaylist()) {
+          playerCues = activePlaylist().cues.map(cleanCue);
+          playerSourceId = state.activeId;
+          playerSourceName = activePlaylist().name;
+        } else if (playerSourceId) {
+          var loadedPl = playlistById(playerSourceId);
+          if (loadedPl) playerSourceName = loadedPl.name;
+        }
         renderPlaylists();
         renderCues();
+        renderPlayerList();
         updateNowPlaying();
         updateKeyUI();
         startTicker();
@@ -1969,6 +2423,14 @@
         $("btnReplay").addEventListener("click", replaySegment);
         $("btnExtend").addEventListener("click", extendSegment);
         $("btnFull").addEventListener("click", toggleFullscreen);
+        $("btnPlayerMute").addEventListener("click", function () {
+          playerMuted = !playerMuted;
+          applyPlayerMute();
+          toast(playerMuted ? "Player muted — the builder preview is unaffected." : "Player sound on.");
+        });
+        $("btnLoadPlayer").addEventListener("click", function () { loadIntoPlayer($("playerPlSelect").value); });
+        $("btnPlayerSave").addEventListener("click", savePlayerOrder);
+        $("btnPlayerSaveAs").addEventListener("click", savePlayerAs);
         $("xfRange").addEventListener("input", function () {
           state.crossfade = parseFloat(this.value);
           $("xfVal").textContent = (state.crossfade % 1 ? state.crossfade.toFixed(1) : state.crossfade) + "s";
@@ -1976,7 +2438,7 @@
         });
         $("progressTrack").addEventListener("click", function (ev) {
           var deck = decks[liveDeck];
-          var cue = findCue(deck.cueId);
+          var cue = findPlayerCue(deck.cueId);
           if (!cue || !deck.loaded) return;
           var rect = this.getBoundingClientRect();
           var pct = (ev.clientX - rect.left) / rect.width;
@@ -2039,7 +2501,7 @@
         }, 250);
 
         // drag & drop onto the cue list (and the whole side column)
-        var dropZones = [$("cueList"), document.querySelector(".side-col")];
+        var dropZones = [$("cueList"), document.querySelector(".builder-right")];
         dropZones.forEach(function (zone) {
           zone.addEventListener("dragover", function (ev) {
             ev.preventDefault();
@@ -2157,9 +2619,14 @@
           var idx = cues().indexOf(cue);
           pvPause();
           previewEl.pause();
-          startAt(idx);
+          playBuilderCue(idx);
         });
         $("btnCloseEditor").addEventListener("click", function () { readEditorTimes(false); closeEditor(); });
+        $("btnPreviewMute").addEventListener("click", function () {
+          previewMuted = !previewMuted;
+          applyPreviewMute();
+          toast(previewMuted ? "Builder preview muted — the player is unaffected." : "Builder preview sound on.");
+        });
 
         // export / import
         $("btnExport").addEventListener("click", exportJSON);
