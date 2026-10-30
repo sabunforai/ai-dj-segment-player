@@ -412,7 +412,7 @@
         <h1>AI DJ Segment Player<span class="chip">LOCAL</span></h1>
         <p class="sub">Party build — no login, no server. Plays audio &amp; video files from this machine with no internet at all, plus YouTube cues whenever you're online. Pick per location.</p>
       </div>
-      <div class="ver"><b>v1.2.0</b> · Oct 29, 2026 · file:// ready</div>
+      <div class="ver"><b>v1.2.1</b> · Oct 29, 2026 · file:// ready</div>
     </header>
 
     <main>
@@ -624,7 +624,7 @@
 
     <script>
       "use strict";
-      var VERSION = "1.2.0";
+      var VERSION = "1.2.1";
       var LS_KEY = "aidj-local-v1";
 
       /* ============================== state ============================== */
@@ -768,6 +768,23 @@
                 playerSourceId = data.playerSourceId || null;
                 playerSourceName = data.playerSourceName || "";
               }
+              // Repair any cue ids shared between playlists (older Save As
+              // copies reused the source entries' ids, and ids key the
+              // session's file links): mint fresh ids for duplicates so
+              // every entry — and its segment — stays independent.
+              var seenCueIds = {};
+              var srcRemap = {};
+              state.playlists.forEach(function (p) {
+                p.cues.forEach(function (c) {
+                  if (seenCueIds[c.id]) {
+                    var nid = uid();
+                    if (p.id === playerSourceId) srcRemap[c.id] = nid;
+                    c.id = nid;
+                  }
+                  seenCueIds[c.id] = true;
+                });
+              });
+              playerCues.forEach(function (pc) { if (srcRemap[pc.id]) pc.id = srcRemap[pc.id]; });
             }
           }
         } catch (e) { /* fresh start */ }
@@ -1036,13 +1053,8 @@
         if (deck.mode === "yt" && deck.yt && deck.ytReady) { try { deck.yt.seekTo(t, true); } catch (e) {} return; }
         try { deck.el.currentTime = t; } catch (e) {}
       }
-      function dPlay(i) {
+      function mediaPlayEl(i) {
         var deck = decks[i];
-        deck.wantPlay = true;
-        if (deck.mode === "yt") {
-          if (deck.yt && deck.ytReady) { try { (playerMuted ? deck.yt.mute() : deck.yt.unMute()); deck.yt.playVideo(); } catch (e) {} }
-          return;
-        }
         var cue = findPlayerCue(deck.cueId);
         var p = deck.el.play();
         if (p && p.catch) p.catch(function (err) {
@@ -1051,6 +1063,20 @@
             advance(1);
           }
         });
+      }
+      function dPlay(i) {
+        var deck = decks[i];
+        deck.wantPlay = true;
+        if (deck.mode === "yt") {
+          if (deck.yt && deck.ytReady && deck.loaded) { try { (playerMuted ? deck.yt.mute() : deck.yt.unMute()); deck.yt.playVideo(); } catch (e) {} }
+          return;
+        }
+        // A media deck that hasn't finished loading must not start yet:
+        // loadDeck starts it the moment the seek to the entry's segment
+        // in-point has landed, so no cue is ever heard from 0:00 unless
+        // its segment actually starts there.
+        if (!deck.loaded) return;
+        mediaPlayEl(i);
       }
       function dPause(i) {
         var deck = decks[i];
@@ -1119,14 +1145,16 @@
         deck.el.muted = playerMuted;
         deck.el.volume = volume;
         deck.el.style.opacity = cue.kind === "video" ? String(volume) : "0";
-        var startAt = deckStart(cue);
+        var startSec = deckStart(cue);
         var seek = function () {
-          try { deck.el.currentTime = startAt; } catch (e) {}
-          deck.loaded = true;
           deck.el.removeEventListener("loadedmetadata", seek);
+          try { deck.el.currentTime = startSec; } catch (e) {}
+          deck.loaded = true;
+          // Start playback only now that the seek to this entry's segment
+          // in-point has been applied (see dPlay).
+          if (deck.wantPlay && deck.cueId === cue.id) mediaPlayEl(deckIdx);
         };
         deck.el.addEventListener("loadedmetadata", seek);
-        if (deck.el.readyState >= 1) seek();
       }
       function clearDeck(deckIdx) {
         var deck = decks[deckIdx];
@@ -1175,13 +1203,29 @@
         return true;
       }
 
+      // Every navigation path — Prev/Next buttons, arrow keys, auto-advance
+      // and double-click jumps — goes through here, so they all behave the
+      // same: the target entry starts at ITS segment in-point, plays only
+      // its segment (the ticker enforces its out-point), and uses the
+      // normal crossfade transition while a set is playing.
+      function goToPos(next) {
+        if (next < 0 || next >= playerCues.length) return;
+        if (isPlaying && queuePos >= 0 && decks[liveDeck].cueId && state.crossfade > 0 && next !== queuePos) {
+          if (fading) finishFade(true);
+          if (next === queuePos) return; // the fade just finished landed on the target
+          beginFadeTo(next);
+        } else {
+          startAt(next);
+        }
+      }
+
       function advance(dir) {
         var next = dir > 0 ? playableFrom(queuePos + 1) : playableBefore(queuePos - 1);
         if (next < 0) {
           if (dir > 0) { stopSet("Set complete"); }
           return;
         }
-        startAt(next, { deck: 1 - liveDeck });
+        goToPos(next);
       }
 
       function beginFade(nextPos, remaining) {
@@ -1231,6 +1275,15 @@
           if (cue.source === "youtube" && cue.duration == null) {
             var rd = dDur(liveDeck);
             if (rd > 0) { cue.duration = rd; save(); renderPlayerList(); renderCues(); }
+          }
+          // Segment-start guard: a deck must never be heard playing before
+          // its entry's in-point (a seek can lose a race when a deck is
+          // reused by Prev/Next). Pull it — and any fading-in deck —
+          // forward to the in-point.
+          if (isPlaying && t < start - 0.35) dSeek(liveDeck, start);
+          if (fading) {
+            var fcue = findPlayerCue(decks[fading.to].cueId);
+            if (fcue && decks[fading.to].loaded && dTime(fading.to) < deckStart(fcue) - 0.35) dSeek(fading.to, deckStart(fcue));
           }
           var segLen = Math.max(0.01, end - start);
           var pct = Math.max(0, Math.min(100, ((t - start) / segLen) * 100));
@@ -1959,12 +2012,7 @@
           return;
         }
         if (idx === queuePos && decks[liveDeck].cueId === cue.id) return;
-        if (isPlaying && queuePos >= 0 && state.crossfade > 0) {
-          if (fading) finishFade(true);
-          beginFadeTo(idx);
-        } else {
-          startAt(idx);
-        }
+        goToPos(idx);
       }
       // A play tap in the builder loads that playlist into the player and starts there.
       function playBuilderCue(idx) {
@@ -1981,7 +2029,15 @@
         playerCues.forEach(function (pc) {
           var bc = null;
           for (var i = 0; i < p.cues.length; i++) if (p.cues[i].id === pc.id) bc = p.cues[i];
-          if (bc) { next.push(bc); used[bc.id] = true; }
+          if (bc) {
+            // Segments live on the entry, not the song: saving the play
+            // list writes each entry's own in/out back with that entry, so
+            // the same song keeps different segments in different playlists.
+            bc.in = pc.in;
+            bc.out = pc.out;
+            if (pc.duration != null) bc.duration = pc.duration;
+            next.push(bc); used[bc.id] = true;
+          }
           else next.push(cleanCue(pc));
         });
         p.cues.forEach(function (bc) { if (!used[bc.id]) next.push(bc); });
@@ -1995,13 +2051,32 @@
         var name = $("playerSaveAsName").value.trim();
         if (!name) { notice("Type a name for the new playlist in the Save As box first."); return; }
         if (!playerCues.length) { notice("The play list is empty — load a playlist into the player first."); return; }
-        var p = { id: uid(), name: name, cues: playerCues.map(function (pc) { return cleanCue(pc); }) };
+        // The new playlist's entries get fresh ids: segments and file links
+        // are per entry, so these copies must be fully independent of the
+        // playlist they came from — the same song in both playlists keeps
+        // its own segment in each.
+        var idMap = {};
+        var savedCues = playerCues.map(function (pc) {
+          var nc = cleanCue(pc);
+          var oldId = nc.id;
+          nc.id = uid();
+          idMap[oldId] = nc.id;
+          if (files[oldId]) files[nc.id] = files[oldId];
+          if (thumbCache[oldId]) thumbCache[nc.id] = thumbCache[oldId];
+          return nc;
+        });
+        var p = { id: uid(), name: name, cues: savedCues };
         state.playlists.push(p);
         playerSourceId = p.id;
         playerSourceName = p.name;
+        playerCues = savedCues.map(function (c) { return cleanCue(c); });
+        for (var di = 0; di < 2; di++) {
+          if (decks[di].cueId && idMap[decks[di].cueId]) decks[di].cueId = idMap[decks[di].cueId];
+        }
         $("playerSaveAsName").value = "";
         save();
         renderPlaylists();
+        renderPlayerList();
         updateNowPlaying();
         toast("Saved the current play order as “" + name + "”. The player is now loaded from it.");
       }
